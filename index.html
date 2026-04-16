@@ -1,0 +1,1488 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0c1222">
+<title>🐑 Animal ID — تعريف الحيوان</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0c1222;
+  --surface: #151d30;
+  --surface2: #1a2540;
+  --border: #243050;
+  --accent: #38bdf8;
+  --accent2: #06b6d4;
+  --accent-glow: rgba(56,189,248,0.15);
+  --success: #34d399;
+  --warn: #fbbf24;
+  --danger: #f87171;
+  --text: #e8edf5;
+  --text2: #8899b4;
+  --radius: 14px;
+  --font: 'Tajawal', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  direction: rtl;
+  overscroll-behavior: none;
+}
+.app { height: 100vh; height: 100dvh; display: flex; flex-direction: column; }
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, #0f1b33 0%, #162040 100%);
+  padding: 12px 16px;
+  display: flex; align-items: center; gap: 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.header-icon { font-size: 28px; }
+.header-title { flex: 1; }
+.header-title h1 { font-size: 16px; font-weight: 800; color: var(--accent); line-height: 1.3; }
+.header-title p { font-size: 11px; color: var(--text2); }
+.model-status {
+  width: 10px; height: 10px; border-radius: 50%;
+  flex-shrink: 0; transition: all 0.3s;
+}
+.model-status.loading { background: var(--warn); animation: pulse-dot 1.2s infinite; }
+.model-status.ready { background: var(--success); box-shadow: 0 0 8px rgba(52,211,153,0.5); }
+.model-status.error { background: var(--danger); }
+@keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* Tabs */
+.tabs {
+  display: flex; background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.tab-btn {
+  flex: 1; padding: 10px 4px 8px; background: none; border: none;
+  color: var(--text2); font-family: var(--font); font-size: 11px; font-weight: 700;
+  cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+}
+.tab-btn span { font-size: 20px; }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); background: var(--accent-glow); }
+
+/* Content */
+.content { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 16px; padding-bottom: 24px; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* Cards */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px; margin-bottom: 14px;
+}
+.card-title {
+  font-size: 14px; font-weight: 800; color: var(--accent);
+  margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+}
+
+/* Camera */
+.camera-box {
+  position: relative; width: 100%; aspect-ratio: 4/3;
+  background: #000; border-radius: 12px; overflow: hidden;
+  margin-bottom: 12px; border: 2px solid var(--border);
+}
+.camera-box video { width: 100%; height: 100%; object-fit: cover; }
+.camera-box canvas { display: none; }
+.camera-placeholder {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: #4a5568; gap: 8px;
+}
+.camera-placeholder span { font-size: 48px; }
+.camera-placeholder p { font-size: 13px; }
+.camera-overlay {
+  position: absolute; inset: 0; pointer-events: none;
+  display: flex; align-items: center; justify-content: center;
+}
+/* OCR guide rectangle */
+.ocr-guide {
+  width: 70%; height: 30%; border: 2px dashed rgba(56,189,248,0.7);
+  border-radius: 8px; position: relative;
+  box-shadow: 0 0 0 2000px rgba(0,0,0,0.35);
+}
+.ocr-guide-label {
+  position: absolute; bottom: -28px; left: 50%; transform: translateX(-50%);
+  color: var(--accent); font-size: 11px; font-weight: 700; white-space: nowrap;
+  background: rgba(0,0,0,0.6); padding: 3px 10px; border-radius: 10px;
+}
+/* Face guide circle */
+.face-guide {
+  width: 65%; aspect-ratio: 1; border-radius: 50%;
+  border: 2px dashed rgba(52,211,153,0.7);
+  box-shadow: 0 0 0 2000px rgba(0,0,0,0.35);
+  position: relative;
+}
+.face-guide-label {
+  position: absolute; bottom: -28px; left: 50%; transform: translateX(-50%);
+  color: var(--success); font-size: 11px; font-weight: 700; white-space: nowrap;
+  background: rgba(0,0,0,0.6); padding: 3px 10px; border-radius: 10px;
+}
+.capture-count {
+  position: absolute; top: 10px; left: 10px;
+  background: rgba(0,0,0,0.7); color: var(--accent); padding: 4px 10px;
+  border-radius: 20px; font-size: 12px; font-weight: 700;
+}
+
+/* Buttons */
+.btn-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.btn {
+  flex: 1; padding: 11px 12px; border: none; border-radius: 10px;
+  font-family: var(--font); font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: all 0.15s; display: flex;
+  align-items: center; justify-content: center; gap: 6px;
+}
+.btn:active { transform: scale(0.96); }
+.btn:disabled { opacity: 0.4; cursor: default; transform: none; }
+.btn-primary { background: var(--accent); color: #000; }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-success { background: var(--success); color: #000; }
+.btn-outline { background: transparent; border: 2px solid var(--border); color: var(--text); }
+.btn-full { width: 100%; }
+
+/* Form */
+.form-group { margin-bottom: 12px; }
+.form-label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 4px; font-weight: 600; }
+.form-input {
+  width: 100%; padding: 10px 14px; background: var(--bg);
+  border: 1.5px solid var(--border); border-radius: 10px;
+  color: var(--text); font-family: var(--font); font-size: 14px;
+  outline: none; transition: border-color 0.2s;
+}
+.form-input:focus { border-color: var(--accent); }
+.form-input::placeholder { color: #4a5568; }
+select.form-input { appearance: none; cursor: pointer; }
+
+/* Species selector */
+.species-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.species-opt {
+  padding: 10px; border: 2px solid var(--border); border-radius: 10px;
+  background: var(--bg); text-align: center; cursor: pointer;
+  font-size: 13px; font-weight: 700; transition: all 0.15s;
+}
+.species-opt.active { border-color: var(--accent); background: var(--accent-glow); color: var(--accent); }
+.species-opt span { display: block; font-size: 22px; margin-bottom: 2px; }
+
+/* OCR Result */
+.ocr-result {
+  background: var(--bg); border: 2px solid var(--accent);
+  border-radius: 12px; padding: 14px; text-align: center; margin: 12px 0;
+}
+.ocr-number {
+  font-size: 32px; font-weight: 900; color: var(--accent);
+  letter-spacing: 3px; direction: ltr; margin: 8px 0;
+}
+.ocr-confidence {
+  font-size: 11px; color: var(--text2);
+}
+
+/* Match Result */
+.match-result {
+  border-radius: 12px; padding: 16px; text-align: center;
+  margin: 12px 0; border: 2px solid;
+}
+.match-found { background: rgba(52,211,153,0.08); border-color: var(--success); }
+.match-notfound { background: rgba(248,113,113,0.08); border-color: var(--danger); }
+.match-code { font-size: 28px; font-weight: 900; letter-spacing: 2px; margin: 6px 0; }
+.match-bar-bg {
+  height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; margin: 8px 0;
+}
+.match-bar-fill {
+  height: 100%; border-radius: 4px; transition: width 0.5s;
+  background: linear-gradient(90deg, var(--accent), var(--success));
+}
+.match-pct { font-size: 20px; font-weight: 900; }
+.match-label { font-size: 12px; color: var(--text2); }
+
+/* Animal list */
+.animal-item {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px; margin-bottom: 10px;
+}
+.animal-icon {
+  width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 22px;
+  background: linear-gradient(135deg, var(--surface2), var(--bg));
+  border: 1px solid var(--border);
+}
+.animal-info { flex: 1; min-width: 0; }
+.animal-code { font-size: 15px; font-weight: 800; color: var(--accent); }
+.animal-meta { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.animal-photos { font-size: 10px; color: var(--text2); margin-top: 1px; }
+.animal-del {
+  width: 32px; height: 32px; border-radius: 50%; border: none;
+  background: rgba(248,113,113,0.1); color: var(--danger);
+  font-size: 14px; cursor: pointer; flex-shrink: 0; transition: all 0.15s;
+}
+.animal-del:hover { background: var(--danger); color: #fff; }
+
+/* Stats */
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.stat-box {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px; text-align: center;
+}
+.stat-num { font-size: 32px; font-weight: 900; color: var(--accent); }
+.stat-label { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+/* Progress */
+.progress-msg {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface2); border-radius: 10px; padding: 12px;
+  margin: 10px 0; font-size: 13px;
+}
+.spinner {
+  width: 18px; height: 18px; border: 2px solid var(--border);
+  border-top-color: var(--accent); border-radius: 50%;
+  animation: spin 0.8s linear infinite; flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Toast */
+.toast-container { position: fixed; top: 70px; left: 16px; right: 16px; z-index: 999; }
+.toast {
+  padding: 12px 16px; border-radius: 10px; margin-bottom: 8px;
+  font-size: 13px; font-weight: 600; animation: slide-down 0.3s;
+  display: flex; align-items: center; gap: 8px;
+}
+.toast-success { background: var(--success); color: #000; }
+.toast-error { background: var(--danger); color: #fff; }
+.toast-info { background: var(--accent); color: #000; }
+@keyframes slide-down { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* Mode toggle */
+.mode-toggle {
+  display: flex; background: var(--bg); border-radius: 10px;
+  padding: 3px; margin-bottom: 14px; border: 1px solid var(--border);
+}
+.mode-btn {
+  flex: 1; padding: 9px; border: none; border-radius: 8px;
+  background: none; color: var(--text2); font-family: var(--font);
+  font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+}
+.mode-btn.active { background: var(--accent); color: #000; }
+
+/* Settings */
+.setting-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 0; border-bottom: 1px solid var(--border);
+}
+.setting-row:last-child { border-bottom: none; }
+.setting-label { font-size: 13px; font-weight: 600; }
+.setting-val { font-size: 13px; color: var(--accent); font-weight: 700; }
+input[type="range"] {
+  width: 120px; accent-color: var(--accent); background: transparent;
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center; padding: 40px 20px; color: var(--text2);
+}
+.empty-state span { font-size: 48px; display: block; margin-bottom: 12px; }
+.empty-state p { font-size: 13px; line-height: 1.6; }
+
+/* Scrollbar */
+.content::-webkit-scrollbar { width: 4px; }
+.content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+/* Search */
+.search-box {
+  position: relative; margin-bottom: 12px;
+}
+.search-box input { padding-right: 36px; }
+.search-icon {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  font-size: 14px; color: var(--text2);
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Header -->
+  <header class="header">
+    <div class="header-icon">🐑</div>
+    <div class="header-title">
+      <h1>Animal ID — تعريف الحيوان</h1>
+      <p id="statusText">جاري تحميل النماذج...</p>
+    </div>
+    <div id="modelDot" class="model-status loading" title="حالة النموذج"></div>
+  </header>
+
+  <!-- Tabs -->
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="identify" onclick="switchTab('identify')">
+      <span>🔍</span> تعريف
+    </button>
+    <button class="tab-btn" data-tab="register" onclick="switchTab('register')">
+      <span>📸</span> تسجيل
+    </button>
+    <button class="tab-btn" data-tab="registry" onclick="switchTab('registry')">
+      <span>📋</span> السجل
+    </button>
+    <button class="tab-btn" data-tab="settings" onclick="switchTab('settings')">
+      <span>⚙️</span> إعدادات
+    </button>
+  </nav>
+
+  <!-- Toast -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- ==================== IDENTIFY TAB ==================== -->
+    <div class="tab-panel active" id="tab-identify">
+      <div class="mode-toggle">
+        <button class="mode-btn active" onclick="setIdMode('ocr')">📝 قراءة الرقم (OCR)</button>
+        <button class="mode-btn" onclick="setIdMode('face')">🐾 بصمة الوجه</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span id="idModeIcon">📝</span>
+          <span id="idModeTitle">قراءة الرقم البصري</span>
+        </div>
+
+        <div class="camera-box" id="idCameraBox">
+          <video id="idVideo" autoplay playsinline muted></video>
+          <canvas id="idCanvas"></canvas>
+          <div class="camera-placeholder" id="idPlaceholder">
+            <span>📷</span>
+            <p>اضغط "تشغيل الكاميرا" للبدء</p>
+          </div>
+          <div class="camera-overlay" id="idOverlay" style="display:none">
+            <div class="ocr-guide" id="idGuide">
+              <div class="ocr-guide-label" id="idGuideLabel">وجّه الكاميرا نحو رقم الأذن</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" id="idCameraBtn" onclick="toggleIdCamera()">
+            📷 تشغيل الكاميرا
+          </button>
+          <button class="btn btn-success" id="idCaptureBtn" onclick="captureForId()" disabled>
+            📸 التقاط
+          </button>
+        </div>
+
+        <div id="idProgress" style="display:none">
+          <div class="progress-msg">
+            <div class="spinner"></div>
+            <span id="idProgressText">جاري المعالجة...</span>
+          </div>
+        </div>
+
+        <!-- OCR Result -->
+        <div id="ocrResult" style="display:none">
+          <div class="ocr-result">
+            <div style="font-size:12px; color:var(--text2)">الرقم المقروء:</div>
+            <div class="ocr-number" id="ocrNumber"></div>
+            <div class="ocr-confidence" id="ocrConfidence"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">تعديل الرقم يدوياً (إن لزم)</label>
+            <input type="text" class="form-input" id="ocrEditInput" dir="ltr" style="text-align:center; font-size:18px; font-weight:800; letter-spacing:2px">
+          </div>
+          <button class="btn btn-primary btn-full" onclick="searchByTag()">🔍 بحث في السجل</button>
+        </div>
+
+        <!-- Face Match Result -->
+        <div id="faceResult" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- ==================== REGISTER TAB ==================== -->
+    <div class="tab-panel" id="tab-register">
+      <div class="mode-toggle">
+        <button class="mode-btn active" onclick="setRegMode('ocr')">📝 تسجيل بالرقم</button>
+        <button class="mode-btn" onclick="setRegMode('face')">🐾 تسجيل بالوجه</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📸</span> تسجيل حيوان جديد
+        </div>
+
+        <!-- Camera for face registration -->
+        <div id="regCameraSection" style="display:none">
+          <div class="camera-box" id="regCameraBox">
+            <video id="regVideo" autoplay playsinline muted></video>
+            <canvas id="regCanvas"></canvas>
+            <div class="camera-placeholder" id="regPlaceholder">
+              <span>📷</span>
+              <p>شغّل الكاميرا لالتقاط صور الحيوان</p>
+            </div>
+            <div class="camera-overlay" id="regOverlay" style="display:none">
+              <div class="face-guide">
+                <div class="face-guide-label">صوّر وجه الحيوان</div>
+              </div>
+            </div>
+            <div class="capture-count" id="regCaptureCount" style="display:none">
+              📸 <span id="regPhotoCount">0</span>/3
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="regCameraBtn" onclick="toggleRegCamera()">
+              📷 تشغيل الكاميرا
+            </button>
+            <button class="btn btn-success" id="regCaptureBtn" onclick="captureForReg()" disabled>
+              📸 التقاط (<span id="regRemaining">3</span>)
+            </button>
+          </div>
+          <div id="regFaceProgress" style="display:none">
+            <div class="progress-msg">
+              <div class="spinner"></div>
+              <span>جاري استخراج البصمة...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form -->
+        <div class="form-group">
+          <label class="form-label">رقم الحيوان (Visual Tag) *</label>
+          <input type="text" class="form-input" id="regTag" placeholder="مثال: 1234" dir="ltr"
+            style="text-align:center; font-size:16px; font-weight:700; letter-spacing:2px">
+        </div>
+        <div class="form-group">
+          <label class="form-label">اسم الحيوان (اختياري)</label>
+          <input type="text" class="form-input" id="regName" placeholder="مثال: نجمة">
+        </div>
+        <div class="form-group">
+          <label class="form-label">النوع</label>
+          <div class="species-grid" id="regSpeciesGrid">
+            <div class="species-opt active" data-sp="sheep" onclick="selectSpecies(this)"><span>🐑</span>أغنام</div>
+            <div class="species-opt" data-sp="goat" onclick="selectSpecies(this)"><span>🐐</span>ماعز</div>
+            <div class="species-opt" data-sp="cattle" onclick="selectSpecies(this)"><span>🐄</span>أبقار</div>
+            <div class="species-opt" data-sp="camel" onclick="selectSpecies(this)"><span>🐪</span>إبل</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">ملاحظات</label>
+          <input type="text" class="form-input" id="regNotes" placeholder="أي ملاحظات...">
+        </div>
+
+        <button class="btn btn-primary btn-full" onclick="registerAnimal()" id="regSubmitBtn">
+          💾 حفظ وتسجيل
+        </button>
+      </div>
+    </div>
+
+    <!-- ==================== REGISTRY TAB ==================== -->
+    <div class="tab-panel" id="tab-registry">
+      <div class="card" style="padding:12px">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" class="form-input" id="searchInput" placeholder="ابحث برقم أو اسم الحيوان..."
+            oninput="renderRegistry()" style="margin-bottom:0">
+        </div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-box">
+          <div class="stat-num" id="totalCount">0</div>
+          <div class="stat-label">إجمالي مسجل</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="faceCount">0</div>
+          <div class="stat-label">ببصمة وجه</div>
+        </div>
+      </div>
+      <div id="registryList"></div>
+    </div>
+
+    <!-- ==================== SETTINGS TAB ==================== -->
+    <div class="tab-panel" id="tab-settings">
+      <div class="card">
+        <div class="card-title">⚙️ إعدادات التعرف</div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">حد التطابق (Threshold)</div>
+            <div style="font-size:11px; color:var(--text2)">الحد الأدنى لقبول التعرف</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px">
+            <input type="range" min="50" max="95" value="75" id="thresholdSlider"
+              oninput="updateSetting('threshold', this.value)">
+            <span class="setting-val" id="thresholdVal">75%</span>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">فجوة الثقة (Gap)</div>
+            <div style="font-size:11px; color:var(--text2)">الفرق بين أفضل تطابقين</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px">
+            <input type="range" min="2" max="25" value="8" id="gapSlider"
+              oninput="updateSetting('gap', this.value)">
+            <span class="setting-val" id="gapVal">8%</span>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">عدد صور التسجيل</div>
+            <div style="font-size:11px; color:var(--text2)">صور لكل حيوان عند التسجيل</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px">
+            <input type="range" min="1" max="5" value="3" id="regPhotosSlider"
+              oninput="updateSetting('regPhotos', this.value)">
+            <span class="setting-val" id="regPhotosVal">3</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🗄️ البيانات</div>
+        <div style="display:flex; gap:8px">
+          <button class="btn btn-outline" style="flex:1" onclick="exportData()">📤 تصدير البيانات</button>
+          <button class="btn btn-outline" style="flex:1" onclick="document.getElementById('importFile').click()">📥 استيراد</button>
+          <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+        </div>
+        <div style="margin-top:10px">
+          <button class="btn btn-danger btn-full" onclick="clearAllData()">🗑️ مسح جميع البيانات</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">ℹ️ معلومات</div>
+        <div style="font-size:12px; color:var(--text2); line-height:1.7">
+          <p>• <strong>وضع OCR:</strong> يقرأ الرقم المكتوب على أذن الحيوان باستخدام Tesseract.js</p>
+          <p>• <strong>وضع الوجه:</strong> يستخرج بصمة وجه الحيوان باستخدام MobileNet (تجريبي)</p>
+          <p>• البيانات تُحفظ محلياً على هذا الجهاز فقط</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🛡️ طبقات الحماية (Face Mode)</div>
+        <div style="font-size:12px; color:var(--text2); line-height:1.8">
+          <p>🔴 <strong style="color:var(--danger)">الطبقة 1:</strong> فحص "هل هذه صورة حيوان؟" — يرفض صور الأشياء والأشخاص</p>
+          <p>🟡 <strong style="color:var(--warn)">الطبقة 2:</strong> حد أدنى مطلق للتطابق (${MIN_ABSOLUTE_SIMILARITY}%) — لا يقبل أي تطابق أقل</p>
+          <p>🟢 <strong style="color:var(--success)">الطبقة 3:</strong> إذا أقل من ${MIN_ANIMALS_FOR_FACE_ID} حيوانات مسجلة → يرفع الحد إلى ${SINGLE_ANIMAL_MIN_SIMILARITY}%</p>
+          <p style="margin-top:6px; color:var(--warn)">⚠️ وضع التعرف بالوجه تجريبي — الدقة تعتمد على ظروف التصوير وعدد الصور المسجلة</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- TensorFlow.js + MobileNet -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.15.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js"></script>
+<!-- Tesseract.js -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// STATE & CONFIG
+// ═══════════════════════════════════════════════════════
+const SPECIES_EMOJI = { sheep:'🐑', goat:'🐐', cattle:'🐄', camel:'🐪', horse:'🐴', poultry:'🐔' };
+const SPECIES_AR = { sheep:'أغنام', goat:'ماعز', cattle:'أبقار', camel:'إبل', horse:'خيول', poultry:'دواجن' };
+
+let settings = {
+  threshold: 75,
+  gap: 8,
+  regPhotos: 3,
+};
+
+let animals = []; // { id, tag, name, species, notes, embeddings:[[]], createdAt }
+let mobileNetModel = null;
+let tesseractWorker = null;
+let modelsReady = { mobilenet: false, tesseract: false };
+
+// Camera state
+let idStream = null, regStream = null;
+let idCameraActive = false, regCameraActive = false;
+let idMode = 'ocr'; // 'ocr' | 'face'
+let regMode = 'ocr'; // 'ocr' | 'face'
+let regEmbeddings = [];
+let regPhotosTaken = 0;
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+(async function init() {
+  loadFromStorage();
+  renderRegistry();
+
+  // Load MobileNet
+  try {
+    if (typeof mobilenet !== 'undefined' && typeof tf !== 'undefined') {
+      mobileNetModel = await mobilenet.load({ version: 2, alpha: 1.0 });
+      modelsReady.mobilenet = true;
+      console.log('MobileNet loaded');
+    }
+  } catch(e) {
+    console.error('MobileNet load error:', e);
+  }
+
+  // Init Tesseract worker
+  try {
+    if (typeof Tesseract !== 'undefined') {
+      tesseractWorker = await Tesseract.createWorker('eng', 1, {
+        logger: m => {
+          if (m.status === 'recognizing text') {
+            const pct = Math.round(m.progress * 100);
+            const el = document.getElementById('idProgressText');
+            if (el) el.textContent = `جاري القراءة... ${pct}%`;
+          }
+        }
+      });
+      // Configure for digits/numbers primarily
+      await tesseractWorker.setParameters({
+        tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-/. ',
+        tessedit_pageseg_mode: '7', // single line
+      });
+      modelsReady.tesseract = true;
+      console.log('Tesseract ready');
+    }
+  } catch(e) {
+    console.error('Tesseract init error:', e);
+  }
+
+  updateModelStatus();
+})();
+
+function updateModelStatus() {
+  const dot = document.getElementById('modelDot');
+  const txt = document.getElementById('statusText');
+  const anyReady = modelsReady.mobilenet || modelsReady.tesseract;
+  const allReady = modelsReady.mobilenet && modelsReady.tesseract;
+
+  if (allReady) {
+    dot.className = 'model-status ready';
+    txt.textContent = 'النماذج جاهزة ✓';
+  } else if (anyReady) {
+    dot.className = 'model-status ready';
+    const parts = [];
+    if (modelsReady.tesseract) parts.push('OCR ✓');
+    if (modelsReady.mobilenet) parts.push('Face ✓');
+    txt.textContent = parts.join(' | ') + ' — جاري تحميل الباقي...';
+  } else {
+    dot.className = 'model-status loading';
+    txt.textContent = 'جاري تحميل النماذج...';
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// STORAGE (IndexedDB via localStorage fallback)
+// ═══════════════════════════════════════════════════════
+function saveToStorage() {
+  try {
+    localStorage.setItem('animalId_animals', JSON.stringify(animals));
+    localStorage.setItem('animalId_settings', JSON.stringify(settings));
+  } catch(e) { console.warn('Storage save failed:', e); }
+}
+function loadFromStorage() {
+  try {
+    const a = localStorage.getItem('animalId_animals');
+    if (a) animals = JSON.parse(a);
+    const s = localStorage.getItem('animalId_settings');
+    if (s) {
+      const loaded = JSON.parse(s);
+      settings = { ...settings, ...loaded };
+      // Sync UI
+      if (document.getElementById('thresholdSlider')) {
+        document.getElementById('thresholdSlider').value = settings.threshold;
+        document.getElementById('thresholdVal').textContent = settings.threshold + '%';
+        document.getElementById('gapSlider').value = settings.gap;
+        document.getElementById('gapVal').textContent = settings.gap + '%';
+        document.getElementById('regPhotosSlider').value = settings.regPhotos;
+        document.getElementById('regPhotosVal').textContent = settings.regPhotos;
+      }
+    }
+  } catch(e) { console.warn('Storage load failed:', e); }
+}
+
+// ═══════════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════════
+function switchTab(tab) {
+  // Stop cameras
+  if (tab !== 'identify' && idCameraActive) toggleIdCamera();
+  if (tab !== 'register' && regCameraActive) toggleRegCamera();
+
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + tab));
+
+  if (tab === 'registry') renderRegistry();
+}
+
+// ═══════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════
+function toast(msg, type='info') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = 'toast toast-' + type;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3000);
+}
+
+// ═══════════════════════════════════════════════════════
+// CAMERA HELPERS
+// ═══════════════════════════════════════════════════════
+async function startCamera(videoEl, placeholderEl) {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 960 } }
+    });
+    videoEl.srcObject = stream;
+    await videoEl.play();
+    placeholderEl.style.display = 'none';
+    return stream;
+  } catch(e) {
+    toast('تعذر الوصول للكاميرا. تأكد من منح الصلاحيات.', 'error');
+    return null;
+  }
+}
+
+function stopCamera(stream, videoEl, placeholderEl) {
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  videoEl.srcObject = null;
+  placeholderEl.style.display = 'flex';
+}
+
+function captureFrame(videoEl, canvasEl) {
+  const w = videoEl.videoWidth || 640;
+  const h = videoEl.videoHeight || 480;
+  canvasEl.width = w;
+  canvasEl.height = h;
+  canvasEl.getContext('2d').drawImage(videoEl, 0, 0, w, h);
+  return canvasEl;
+}
+
+// ═══════════════════════════════════════════════════════
+// IDENTIFY MODE
+// ═══════════════════════════════════════════════════════
+function setIdMode(mode) {
+  idMode = mode;
+  document.querySelectorAll('#tab-identify .mode-btn').forEach((b,i) => {
+    b.classList.toggle('active', (i === 0 && mode === 'ocr') || (i === 1 && mode === 'face'));
+  });
+  const icon = document.getElementById('idModeIcon');
+  const title = document.getElementById('idModeTitle');
+  const guide = document.getElementById('idGuide');
+  const guideLabel = document.getElementById('idGuideLabel');
+
+  if (mode === 'ocr') {
+    icon.textContent = '📝';
+    title.textContent = 'قراءة الرقم البصري';
+    guide.className = 'ocr-guide';
+    guideLabel.className = 'ocr-guide-label';
+    guideLabel.textContent = 'وجّه الكاميرا نحو رقم الأذن';
+  } else {
+    icon.textContent = '🐾';
+    title.textContent = 'التعرف ببصمة الوجه';
+    guide.className = 'face-guide';
+    guideLabel.className = 'face-guide-label';
+    guideLabel.textContent = 'صوّب على وجه الحيوان';
+  }
+
+  // Clear previous results
+  document.getElementById('ocrResult').style.display = 'none';
+  document.getElementById('faceResult').style.display = 'none';
+}
+
+async function toggleIdCamera() {
+  const video = document.getElementById('idVideo');
+  const ph = document.getElementById('idPlaceholder');
+  const overlay = document.getElementById('idOverlay');
+  const btn = document.getElementById('idCameraBtn');
+  const capBtn = document.getElementById('idCaptureBtn');
+
+  if (idCameraActive) {
+    stopCamera(idStream, video, ph);
+    idStream = null; idCameraActive = false;
+    overlay.style.display = 'none';
+    btn.innerHTML = '📷 تشغيل الكاميرا';
+    btn.className = 'btn btn-primary';
+    capBtn.disabled = true;
+  } else {
+    idStream = await startCamera(video, ph);
+    if (idStream) {
+      idCameraActive = true;
+      overlay.style.display = 'flex';
+      btn.innerHTML = '⏹ إيقاف';
+      btn.className = 'btn btn-danger';
+      capBtn.disabled = false;
+    }
+  }
+}
+
+async function captureForId() {
+  if (!idCameraActive) return;
+
+  const video = document.getElementById('idVideo');
+  const canvas = document.getElementById('idCanvas');
+  captureFrame(video, canvas);
+
+  document.getElementById('ocrResult').style.display = 'none';
+  document.getElementById('faceResult').style.display = 'none';
+
+  if (idMode === 'ocr') {
+    await processOCR(canvas);
+  } else {
+    await processFaceId(canvas);
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// OCR PROCESSING
+// ═══════════════════════════════════════════════════════
+async function processOCR(canvas) {
+  if (!modelsReady.tesseract) {
+    toast('نموذج OCR لم يُحمّل بعد. انتظر قليلاً...', 'error');
+    return;
+  }
+
+  const progress = document.getElementById('idProgress');
+  progress.style.display = 'block';
+  document.getElementById('idProgressText').textContent = 'جاري تجهيز الصورة...';
+
+  try {
+    // Preprocess: crop center region, enhance contrast
+    const processed = preprocessForOCR(canvas);
+
+    document.getElementById('idProgressText').textContent = 'جاري قراءة الرقم...';
+    const result = await tesseractWorker.recognize(processed);
+    progress.style.display = 'none';
+
+    const text = result.data.text.trim().replace(/\s+/g, ' ');
+    const confidence = Math.round(result.data.confidence);
+
+    if (text.length === 0) {
+      toast('لم يتم اكتشاف نص. حاول تقريب الكاميرا أو تحسين الإضاءة.', 'error');
+      return;
+    }
+
+    // Show result
+    document.getElementById('ocrNumber').textContent = text;
+    document.getElementById('ocrConfidence').textContent = `درجة الثقة: ${confidence}%`;
+    document.getElementById('ocrEditInput').value = text;
+    document.getElementById('ocrResult').style.display = 'block';
+
+    if (confidence >= 70) {
+      toast('تم قراءة الرقم بنجاح!', 'success');
+    } else {
+      toast('القراءة غير واضحة — تحقق من الرقم وعدّله إن لزم', 'info');
+    }
+  } catch(e) {
+    progress.style.display = 'none';
+    console.error('OCR error:', e);
+    toast('خطأ في القراءة. حاول مرة أخرى.', 'error');
+  }
+}
+
+function preprocessForOCR(srcCanvas) {
+  // Crop center region (where the guide rectangle is)
+  const sw = srcCanvas.width;
+  const sh = srcCanvas.height;
+  const cropW = Math.round(sw * 0.7);
+  const cropH = Math.round(sh * 0.3);
+  const cropX = Math.round((sw - cropW) / 2);
+  const cropY = Math.round((sh - cropH) / 2);
+
+  const c = document.createElement('canvas');
+  c.width = cropW;
+  c.height = cropH;
+  const ctx = c.getContext('2d');
+  ctx.drawImage(srcCanvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+  // Enhance: grayscale + contrast
+  const imgData = ctx.getImageData(0, 0, cropW, cropH);
+  const d = imgData.data;
+  for (let i = 0; i < d.length; i += 4) {
+    // Grayscale
+    const gray = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
+    // Increase contrast
+    const enhanced = ((gray - 128) * 1.5) + 128;
+    const v = Math.max(0, Math.min(255, enhanced));
+    // Threshold for binarization
+    const bin = v > 130 ? 255 : 0;
+    d[i] = d[i+1] = d[i+2] = bin;
+  }
+  ctx.putImageData(imgData, 0, 0);
+  return c;
+}
+
+function searchByTag() {
+  const tag = document.getElementById('ocrEditInput').value.trim();
+  if (!tag) { toast('أدخل رقم الحيوان', 'error'); return; }
+
+  // Search animals
+  const found = animals.filter(a =>
+    a.tag.toLowerCase().includes(tag.toLowerCase()) ||
+    tag.toLowerCase().includes(a.tag.toLowerCase())
+  );
+
+  if (found.length === 0) {
+    const resultDiv = document.getElementById('faceResult');
+    resultDiv.innerHTML = `
+      <div class="match-result match-notfound">
+        <div style="font-size:40px; margin-bottom:8px">❌</div>
+        <div style="font-size:14px; font-weight:700; color:var(--danger)">لم يُعثر على الحيوان</div>
+        <div style="font-size:12px; color:var(--text2); margin-top:6px">الرقم "${tag}" غير مسجل في النظام</div>
+        <button class="btn btn-primary" style="margin-top:12px" onclick="prefillRegister('${tag}')">
+          ➕ تسجيل هذا الحيوان
+        </button>
+      </div>`;
+    resultDiv.style.display = 'block';
+  } else {
+    const a = found[0];
+    const resultDiv = document.getElementById('faceResult');
+    resultDiv.innerHTML = `
+      <div class="match-result match-found">
+        <div style="font-size:40px; margin-bottom:6px">${SPECIES_EMOJI[a.species] || '🐾'}</div>
+        <div style="font-size:12px; color:var(--text2)">تم العثور على الحيوان!</div>
+        <div class="match-code" style="color:var(--success)">${a.tag}</div>
+        ${a.name ? `<div style="font-size:14px; color:var(--text)">${a.name}</div>` : ''}
+        <div style="font-size:12px; color:var(--text2); margin-top:4px">
+          ${SPECIES_AR[a.species] || a.species}
+          ${a.notes ? ' • ' + a.notes : ''}
+        </div>
+        <div style="font-size:10px; color:var(--text2); margin-top:6px">
+          سُجل: ${new Date(a.createdAt).toLocaleDateString('ar-EG')}
+          ${a.embeddings.length > 0 ? ' • ببصمة وجه' : ''}
+        </div>
+      </div>`;
+    resultDiv.style.display = 'block';
+    toast('تم العثور على الحيوان ✓', 'success');
+  }
+}
+
+function prefillRegister(tag) {
+  document.getElementById('regTag').value = tag;
+  switchTab('register');
+}
+
+// ═══════════════════════════════════════════════════════
+// PROTECTION LAYER 1: ANIMAL DETECTION
+// ═══════════════════════════════════════════════════════
+// ImageNet animal-related class IDs — MobileNet's classify() returns
+// labels from ImageNet. We check if any top prediction is an animal.
+const ANIMAL_KEYWORDS = [
+  'sheep','lamb','ram','ewe','goat','cattle','cow','bull','ox','calf','bovine',
+  'camel','dromedary','horse','stallion','mare','foal','pony','colt',
+  'hen','rooster','chicken','poultry','cock','drake','goose','duck','turkey',
+  'llama','alpaca','donkey','mule','buffalo','bison','yak','pig','hog','swine',
+  'dog','cat','animal','livestock','mammal','ungulate','ruminant',
+  'bighorn','ibex','chamois','gazelle','antelope','deer','elk','moose',
+  'sorrel','clydesdale','arabian','appaloosa',
+  'angora','merino','persian','collie','shepherd','retriever','hound',
+  'siamese','tabby','egyptian','abyssinian',
+  'tusker','african','indian',
+  'wallaby','wombat','koala','platypus',
+];
+
+async function classifyImage(canvas) {
+  // Use MobileNet's classify to get top predictions
+  try {
+    const predictions = await mobileNetModel.classify(canvas, 5);
+    return predictions; // [{className, probability}]
+  } catch(e) {
+    console.error('Classify error:', e);
+    return [];
+  }
+}
+
+function isAnimalImage(predictions) {
+  if (!predictions || predictions.length === 0) return { isAnimal: false, topLabel: 'unknown', confidence: 0 };
+  
+  for (const pred of predictions) {
+    const label = pred.className.toLowerCase();
+    const isMatch = ANIMAL_KEYWORDS.some(kw => label.includes(kw));
+    if (isMatch && pred.probability > 0.05) {
+      return { isAnimal: true, topLabel: pred.className, confidence: Math.round(pred.probability * 100) };
+    }
+  }
+  
+  return {
+    isAnimal: false,
+    topLabel: predictions[0].className,
+    confidence: Math.round(predictions[0].probability * 100)
+  };
+}
+
+// ═══════════════════════════════════════════════════════
+// PROTECTION CONSTANTS
+// ═══════════════════════════════════════════════════════
+const MIN_ANIMALS_FOR_FACE_ID = 2;       // Layer 3: need at least 2 animals
+const MIN_ABSOLUTE_SIMILARITY = 88;       // Layer 2: absolute floor (percentage)
+const SINGLE_ANIMAL_MIN_SIMILARITY = 95;  // Extra strict when only 1-2 animals registered
+
+// ═══════════════════════════════════════════════════════
+// FACE IDENTIFICATION (with 3 protection layers)
+// ═══════════════════════════════════════════════════════
+async function processFaceId(canvas) {
+  if (!modelsReady.mobilenet) {
+    toast('نموذج التعرف على الوجه لم يُحمّل بعد', 'error');
+    return;
+  }
+
+  const progress = document.getElementById('idProgress');
+  const resultDiv = document.getElementById('faceResult');
+  progress.style.display = 'block';
+
+  try {
+    // ── LAYER 1: Is this even an animal? ──
+    document.getElementById('idProgressText').textContent = 'جاري فحص الصورة...';
+    const predictions = await classifyImage(canvas);
+    const animalCheck = isAnimalImage(predictions);
+
+    if (!animalCheck.isAnimal) {
+      progress.style.display = 'none';
+      const topPreds = predictions.slice(0, 3).map(p => 
+        `${p.className} (${Math.round(p.probability * 100)}%)`
+      ).join('، ');
+      
+      resultDiv.innerHTML = `
+        <div class="match-result match-notfound">
+          <div style="font-size:40px; margin-bottom:8px">🚫</div>
+          <div style="font-size:15px; font-weight:800; color:var(--danger)">هذه ليست صورة حيوان!</div>
+          <div style="font-size:12px; color:var(--text2); margin-top:8px; line-height:1.6">
+            النظام اكتشف أن الصورة تحتوي على:
+            <br><strong style="color:var(--warn)">${animalCheck.topLabel}</strong> (${animalCheck.confidence}%)
+          </div>
+          <div style="font-size:11px; color:var(--text2); margin-top:10px; padding:8px; background:var(--bg); border-radius:8px; direction:ltr; text-align:left">
+            ${topPreds}
+          </div>
+          <div style="font-size:11px; color:var(--text2); margin-top:8px">
+            📸 وجّه الكاميرا نحو وجه الحيوان وحاول مرة أخرى
+          </div>
+        </div>`;
+      resultDiv.style.display = 'block';
+      toast('الصورة لا تحتوي على حيوان!', 'error');
+      return;
+    }
+
+    // ── LAYER 3: Minimum registry check ──
+    const animalsWithFace = animals.filter(a => a.embeddings && a.embeddings.length > 0);
+    if (animalsWithFace.length === 0) {
+      progress.style.display = 'none';
+      resultDiv.innerHTML = `
+        <div class="match-result match-notfound">
+          <div style="font-size:40px; margin-bottom:8px">📭</div>
+          <div style="font-size:14px; font-weight:700; color:var(--warn)">لا توجد حيوانات مسجلة ببصمة وجه</div>
+          <div style="font-size:12px; color:var(--text2); margin-top:6px">
+            سجّل حيوانات أولاً من تبويب "تسجيل" باستخدام وضع "تسجيل بالوجه"
+          </div>
+        </div>`;
+      resultDiv.style.display = 'block';
+      return;
+    }
+
+    // ── Extract embedding & compare ──
+    document.getElementById('idProgressText').textContent = 'جاري استخراج البصمة...';
+    const embedding = await extractEmbedding(canvas);
+    document.getElementById('idProgressText').textContent = 'جاري المقارنة...';
+
+    const results = animalsWithFace.map(a => {
+      let bestSim = 0;
+      for (const stored of a.embeddings) {
+        const sim = cosineSimilarity(embedding, stored);
+        if (sim > bestSim) bestSim = sim;
+      }
+      return { ...a, similarity: Math.round(bestSim * 10000) / 100 };
+    }).sort((a, b) => b.similarity - a.similarity);
+
+    progress.style.display = 'none';
+
+    const best = results[0];
+    const second = results.length > 1 ? results[1] : null;
+    const gap = second ? best.similarity - second.similarity : 0;
+
+    // ── LAYER 2: Absolute similarity floor ──
+    const effectiveMinSim = animalsWithFace.length < MIN_ANIMALS_FOR_FACE_ID 
+      ? SINGLE_ANIMAL_MIN_SIMILARITY 
+      : MIN_ABSOLUTE_SIMILARITY;
+
+    // ── Combined decision ──
+    let found = false;
+    let rejectReason = '';
+
+    if (best.similarity < effectiveMinSim) {
+      found = false;
+      rejectReason = `التطابق (${best.similarity}%) أقل من الحد الأدنى المطلوب (${effectiveMinSim}%)`;
+    } else if (!second && animalsWithFace.length < MIN_ANIMALS_FOR_FACE_ID) {
+      // Only 1 animal registered — require very high similarity
+      found = best.similarity >= SINGLE_ANIMAL_MIN_SIMILARITY;
+      if (!found) rejectReason = `حيوان واحد مسجل فقط — يلزم تطابق ${SINGLE_ANIMAL_MIN_SIMILARITY}%+ (الحالي: ${best.similarity}%)`;
+    } else if (second && gap < settings.gap) {
+      found = false;
+      rejectReason = `الفجوة بين أقرب تطابقين (${gap.toFixed(1)}%) أقل من المطلوب (${settings.gap}%)`;
+    } else if (best.similarity >= settings.threshold && (gap >= settings.gap || !second)) {
+      found = true;
+    } else {
+      found = false;
+      rejectReason = `التطابق (${best.similarity}%) أقل من الحد (${settings.threshold}%)`;
+    }
+
+    // ── Render result ──
+    const warningBanner = animalsWithFace.length < MIN_ANIMALS_FOR_FACE_ID
+      ? `<div style="font-size:11px; color:var(--warn); background:rgba(251,191,36,0.1); padding:8px; border-radius:8px; margin-bottom:10px; border:1px solid rgba(251,191,36,0.3)">
+          ⚠️ عدد الحيوانات المسجلة ببصمة (${animalsWithFace.length}) — النتائج تكون أدق مع ${MIN_ANIMALS_FOR_FACE_ID}+ حيوانات
+        </div>` : '';
+
+    const classifiedAs = `<div style="font-size:10px; color:var(--text2); margin-top:8px; padding:6px; background:var(--bg); border-radius:6px">
+      🔬 تصنيف الصورة: ${animalCheck.topLabel} (${animalCheck.confidence}%)
+    </div>`;
+
+    resultDiv.innerHTML = `
+      ${warningBanner}
+      <div class="match-result ${found ? 'match-found' : 'match-notfound'}">
+        ${found ? `
+          <div style="font-size:40px; margin-bottom:6px">${SPECIES_EMOJI[best.species] || '🐾'}</div>
+          <div style="font-size:12px; color:var(--text2)">تم التعرف!</div>
+          <div class="match-code" style="color:var(--success)">${best.tag}</div>
+          ${best.name ? `<div style="font-size:14px; color:var(--text)">${best.name}</div>` : ''}
+          <div class="match-pct" style="color:var(--success); margin-top:8px">${best.similarity}%</div>
+          <div class="match-bar-bg"><div class="match-bar-fill" style="width:${best.similarity}%"></div></div>
+          <div class="match-label">نسبة التطابق${second ? ` (الفجوة: ${gap.toFixed(1)}%)` : ''}</div>
+          ${classifiedAs}
+        ` : `
+          <div style="font-size:40px; margin-bottom:8px">❌</div>
+          <div style="font-size:14px; font-weight:700; color:var(--danger)">لم يتم التعرف</div>
+          <div style="font-size:12px; color:var(--text2); margin-top:6px; line-height:1.6">
+            ${rejectReason}
+          </div>
+          <div style="font-size:11px; color:var(--text2); margin-top:8px; padding:8px; background:var(--bg); border-radius:8px">
+            أقرب تطابق: <strong>${best.tag}</strong> (${best.similarity}%)
+            ${second ? `<br>ثاني أقرب: <strong>${second.tag}</strong> (${second.similarity}%)` : ''}
+            ${second ? `<br>الفجوة: ${gap.toFixed(1)}%` : '<br>⚠️ حيوان واحد مسجل — لا يمكن حساب فجوة'}
+          </div>
+          ${classifiedAs}
+        `}
+      </div>
+      ${results.length > 1 ? `
+        <div class="card" style="margin-top:10px; padding:10px">
+          <div style="font-size:12px; font-weight:700; color:var(--text2); margin-bottom:8px">أقرب النتائج:</div>
+          ${results.slice(0, 5).map((r, i) => `
+            <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border); font-size:12px">
+              <span style="font-weight:700; color:${i === 0 && found ? 'var(--success)' : 'var(--text)'}">${SPECIES_EMOJI[r.species]||'🐾'} ${r.tag} ${r.name ? '('+r.name+')' : ''}</span>
+              <span style="color:var(--accent); font-weight:700">${r.similarity}%</span>
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
+    `;
+    resultDiv.style.display = 'block';
+
+    if (found) toast('تم التعرف على الحيوان! ✓', 'success');
+
+  } catch(e) {
+    progress.style.display = 'none';
+    console.error('Face ID error:', e);
+    toast('خطأ في المعالجة. حاول مرة أخرى.', 'error');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// REGISTRATION
+// ═══════════════════════════════════════════════════════
+let regSpecies = 'sheep';
+
+function setRegMode(mode) {
+  regMode = mode;
+  document.querySelectorAll('#tab-register .mode-btn').forEach((b,i) => {
+    b.classList.toggle('active', (i === 0 && mode === 'ocr') || (i === 1 && mode === 'face'));
+  });
+  document.getElementById('regCameraSection').style.display = mode === 'face' ? 'block' : 'none';
+  if (mode === 'ocr') {
+    regEmbeddings = [];
+    regPhotosTaken = 0;
+  }
+}
+
+function selectSpecies(el) {
+  document.querySelectorAll('.species-opt').forEach(o => o.classList.remove('active'));
+  el.classList.add('active');
+  regSpecies = el.dataset.sp;
+}
+
+async function toggleRegCamera() {
+  const video = document.getElementById('regVideo');
+  const ph = document.getElementById('regPlaceholder');
+  const overlay = document.getElementById('regOverlay');
+  const btn = document.getElementById('regCameraBtn');
+  const capBtn = document.getElementById('regCaptureBtn');
+  const counter = document.getElementById('regCaptureCount');
+
+  if (regCameraActive) {
+    stopCamera(regStream, video, ph);
+    regStream = null; regCameraActive = false;
+    overlay.style.display = 'none';
+    counter.style.display = 'none';
+    btn.innerHTML = '📷 تشغيل الكاميرا';
+    btn.className = 'btn btn-primary';
+    capBtn.disabled = true;
+  } else {
+    regStream = await startCamera(video, ph);
+    if (regStream) {
+      regCameraActive = true;
+      overlay.style.display = 'flex';
+      counter.style.display = 'block';
+      btn.innerHTML = '⏹ إيقاف';
+      btn.className = 'btn btn-danger';
+      capBtn.disabled = false;
+      updateRegCounter();
+    }
+  }
+}
+
+function updateRegCounter() {
+  document.getElementById('regPhotoCount').textContent = regPhotosTaken;
+  document.getElementById('regRemaining').textContent = settings.regPhotos - regPhotosTaken;
+}
+
+async function captureForReg() {
+  if (!regCameraActive || !modelsReady.mobilenet) {
+    if (!modelsReady.mobilenet) toast('نموذج التعرف لم يُحمّل بعد', 'error');
+    return;
+  }
+  if (regPhotosTaken >= settings.regPhotos) {
+    toast(`تم التقاط ${settings.regPhotos} صور بالفعل`, 'info');
+    return;
+  }
+
+  const video = document.getElementById('regVideo');
+  const canvas = document.getElementById('regCanvas');
+  captureFrame(video, canvas);
+
+  document.getElementById('regFaceProgress').style.display = 'block';
+
+  try {
+    // Check if image contains an animal first
+    const predictions = await classifyImage(canvas);
+    const animalCheck = isAnimalImage(predictions);
+
+    if (!animalCheck.isAnimal) {
+      document.getElementById('regFaceProgress').style.display = 'none';
+      toast(`🚫 هذه ليست صورة حيوان! (${animalCheck.topLabel})`, 'error');
+      return;
+    }
+
+    const emb = await extractEmbedding(canvas);
+    regEmbeddings.push(emb);
+    regPhotosTaken++;
+    updateRegCounter();
+    document.getElementById('regFaceProgress').style.display = 'none';
+    toast(`✅ صورة ${regPhotosTaken}/${settings.regPhotos} — ${animalCheck.topLabel}`, 'success');
+
+    if (regPhotosTaken >= settings.regPhotos) {
+      document.getElementById('regCaptureBtn').disabled = true;
+      toast('اكتملت الصور! أدخل البيانات واضغط حفظ.', 'info');
+    }
+  } catch(e) {
+    document.getElementById('regFaceProgress').style.display = 'none';
+    toast('خطأ في استخراج البصمة', 'error');
+  }
+}
+
+async function registerAnimal() {
+  const tag = document.getElementById('regTag').value.trim();
+  const name = document.getElementById('regName').value.trim();
+  const notes = document.getElementById('regNotes').value.trim();
+
+  if (!tag) { toast('أدخل رقم الحيوان', 'error'); return; }
+
+  // Check duplicate tag
+  if (animals.some(a => a.tag.toLowerCase() === tag.toLowerCase())) {
+    toast('هذا الرقم مسجل مسبقاً!', 'error');
+    return;
+  }
+
+  if (regMode === 'face' && regEmbeddings.length === 0) {
+    toast('التقط صور الحيوان أولاً (أو اختر وضع "تسجيل بالرقم")', 'error');
+    return;
+  }
+
+  const animal = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    tag,
+    name,
+    species: regSpecies,
+    notes,
+    embeddings: regMode === 'face' ? [...regEmbeddings] : [],
+    createdAt: new Date().toISOString(),
+  };
+
+  animals.push(animal);
+  saveToStorage();
+
+  // Reset form
+  document.getElementById('regTag').value = '';
+  document.getElementById('regName').value = '';
+  document.getElementById('regNotes').value = '';
+  regEmbeddings = [];
+  regPhotosTaken = 0;
+  updateRegCounter();
+  if (regCameraActive) toggleRegCamera();
+
+  toast(`تم تسجيل الحيوان: ${tag} ✓`, 'success');
+  renderRegistry();
+}
+
+// ═══════════════════════════════════════════════════════
+// REGISTRY
+// ═══════════════════════════════════════════════════════
+function renderRegistry() {
+  const query = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
+  const filtered = animals.filter(a =>
+    !query || a.tag.toLowerCase().includes(query) || (a.name || '').toLowerCase().includes(query)
+  );
+
+  document.getElementById('totalCount').textContent = animals.length;
+  document.getElementById('faceCount').textContent = animals.filter(a => a.embeddings.length > 0).length;
+
+  const list = document.getElementById('registryList');
+  if (filtered.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <span>${animals.length === 0 ? '🐾' : '🔍'}</span>
+        <p>${animals.length === 0
+          ? 'لا توجد حيوانات مسجلة بعد<br>ابدأ بالتسجيل من تبويب "تسجيل"'
+          : 'لا توجد نتائج مطابقة'}</p>
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(a => `
+    <div class="animal-item">
+      <div class="animal-icon">${SPECIES_EMOJI[a.species] || '🐾'}</div>
+      <div class="animal-info">
+        <div class="animal-code">${a.tag}</div>
+        <div class="animal-meta">
+          ${a.name ? a.name + ' • ' : ''}${SPECIES_AR[a.species] || a.species}
+          ${a.notes ? ' • ' + a.notes : ''}
+        </div>
+        <div class="animal-photos">
+          ${a.embeddings.length > 0 ? '🐾 ' + a.embeddings.length + ' بصمة' : '📝 رقم فقط'}
+          • ${new Date(a.createdAt).toLocaleDateString('ar-EG')}
+        </div>
+      </div>
+      <button class="animal-del" onclick="deleteAnimal('${a.id}')" title="حذف">🗑</button>
+    </div>
+  `).join('');
+}
+
+function deleteAnimal(id) {
+  if (!confirm('هل تريد حذف هذا الحيوان؟')) return;
+  animals = animals.filter(a => a.id !== id);
+  saveToStorage();
+  renderRegistry();
+  toast('تم الحذف ✓', 'info');
+}
+
+// ═══════════════════════════════════════════════════════
+// EMBEDDING EXTRACTION
+// ═══════════════════════════════════════════════════════
+async function extractEmbedding(canvas) {
+  return tf.tidy(() => {
+    // Crop center 65% as a square (face region)
+    const w = canvas.width, h = canvas.height;
+    const size = Math.min(w, h) * 0.65;
+    const cx = (w - size) / 2, cy = (h - size) / 2;
+
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = 224; tempCanvas.height = 224;
+    const tCtx = tempCanvas.getContext('2d');
+    tCtx.drawImage(canvas, cx, cy, size, size, 0, 0, 224, 224);
+
+    const img = tf.browser.fromPixels(tempCanvas);
+    const normalized = img.div(255.0).expandDims(0);
+    const activation = mobileNetModel.infer(normalized, true);
+    return Array.from(activation.dataSync());
+  });
+}
+
+function cosineSimilarity(a, b) {
+  let dot = 0, normA = 0, normB = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    normA += a[i] * a[i];
+    normB += b[i] * b[i];
+  }
+  if (normA === 0 || normB === 0) return 0;
+  return dot / (Math.sqrt(normA) * Math.sqrt(normB));
+}
+
+// ═══════════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════════
+function updateSetting(key, val) {
+  val = Number(val);
+  settings[key] = val;
+  if (key === 'threshold') document.getElementById('thresholdVal').textContent = val + '%';
+  else if (key === 'gap') document.getElementById('gapVal').textContent = val + '%';
+  else if (key === 'regPhotos') {
+    document.getElementById('regPhotosVal').textContent = val;
+    regPhotosTaken = 0;
+    regEmbeddings = [];
+    updateRegCounter();
+  }
+  saveToStorage();
+}
+
+// ═══════════════════════════════════════════════════════
+// IMPORT/EXPORT
+// ═══════════════════════════════════════════════════════
+function exportData() {
+  const data = JSON.stringify({ animals, settings, exportDate: new Date().toISOString() }, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `animal-id-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  toast('تم تصدير البيانات ✓', 'success');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.animals && Array.isArray(data.animals)) {
+        if (!confirm(`سيتم استيراد ${data.animals.length} حيوان. هل تريد المتابعة؟`)) return;
+        animals = data.animals;
+        if (data.settings) settings = { ...settings, ...data.settings };
+        saveToStorage();
+        renderRegistry();
+        toast(`تم استيراد ${data.animals.length} حيوان ✓`, 'success');
+      } else {
+        toast('ملف غير صالح', 'error');
+      }
+    } catch(e) {
+      toast('خطأ في قراءة الملف', 'error');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function clearAllData() {
+  if (!confirm('هل أنت متأكد من مسح جميع البيانات؟ لا يمكن التراجع!')) return;
+  animals = [];
+  saveToStorage();
+  renderRegistry();
+  toast('تم مسح جميع البيانات', 'info');
+}
+</script>
+</body>
+</html>
